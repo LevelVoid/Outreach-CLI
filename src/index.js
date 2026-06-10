@@ -25,6 +25,7 @@ ${chalk.bold('Flags:')}
   ${chalk.yellow('--max-companies <n>')}        Max lookalike companies from Ocean.io   ${chalk.gray(`[default: ${defaultConfig.maxCompanies}]`)}
   ${chalk.yellow('--contacts-per-company <n>')} Max decision-makers per company          ${chalk.gray(`[default: ${defaultConfig.contactsPerCompany}]`)}
   ${chalk.yellow('--titles <csv>')}             Comma-separated job titles to target     ${chalk.gray('[default: CEO,CTO,CFO,COO,VP,Director]')}
+  ${chalk.yellow('--template <name>')}            Name of the JS template file in src/templates/ to use
   ${chalk.yellow('--email-delay <ms>')}         Delay between emails in milliseconds     ${chalk.gray(`[default: ${defaultConfig.emailDelayMs}]`)}
   ${chalk.yellow('--test-email <email>')}         Send a test email during a dry run
   ${chalk.yellow('--dry-run')}                  Run all stages but skip sending emails
@@ -64,6 +65,8 @@ function parseArgs(argv) {
       flags.emailDelayMs = parseInt(args[++i], 10);
     } else if (arg === '--test-email' && args[i + 1]) {
       flags.testEmail = args[++i];
+    } else if (arg === '--template' && args[i + 1]) {
+      flags.template = args[++i];
     }
   }
 

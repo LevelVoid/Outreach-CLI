@@ -60,16 +60,36 @@ export async function sendOutreachEmails(contacts, seedDomain, spin, configObj) 
     const firstName = contact.name.split(' ')[0] || 'there';
     const targetEmail = isTestRun ? configObj.testEmail : contact.email;
     
-    // Dynamic outreach template
-    const subject = `Question about ${contact.company}`;
-    const textBody = `Hi ${firstName},\n\nI noticed ${contact.company} operates in a similar space to ${seedDomain} and I was wondering if you are facing similar scaling challenges.\n\nWe've helped companies in your exact space improve their operations. Would you be open to a quick chat next week?\n\nBest regards,\n${SENDER_NAME}`;
-    const htmlBody = `
-      <p>Hi ${firstName},</p>
-      <p>I noticed <strong>${contact.company}</strong> operates in a similar space to <strong>${seedDomain}</strong> and I was wondering if you are facing similar scaling challenges.</p>
-      <p>We've helped companies in your exact space improve their operations. Would you be open to a quick chat next week?</p>
-      <br/>
-      <p>Best regards,<br/><strong>${SENDER_NAME}</strong></p>
-    `;
+    let subject, textBody, htmlBody;
+
+    if (configObj.template) {
+      try {
+        const templateModule = await import(`../templates/${configObj.template}.js`);
+        const templateData = templateModule.default({
+          firstName,
+          company: contact.company,
+          seedDomain,
+          senderName: SENDER_NAME,
+        });
+        subject = templateData.subject;
+        textBody = templateData.textBody;
+        htmlBody = templateData.htmlBody;
+      } catch (err) {
+        spin.fail(`Failed to load template '${configObj.template}': ${err.message}`);
+        process.exit(1);
+      }
+    } else {
+      // Hardcoded default outreach template
+      subject = `Question about ${contact.company}`;
+      textBody = `Hi ${firstName},\n\nI noticed ${contact.company} operates in a similar space to ${seedDomain} and I was wondering if you are facing similar scaling challenges.\n\nWe've helped companies in your exact space improve their operations. Would you be open to a quick chat next week?\n\nBest regards,\n${SENDER_NAME}`;
+      htmlBody = `
+        <p>Hi ${firstName},</p>
+        <p>I noticed <strong>${contact.company}</strong> operates in a similar space to <strong>${seedDomain}</strong> and I was wondering if you are facing similar scaling challenges.</p>
+        <p>We've helped companies in your exact space improve their operations. Would you be open to a quick chat next week?</p>
+        <br/>
+        <p>Best regards,<br/><strong>${SENDER_NAME}</strong></p>
+      `;
+    }
 
     if (isDryRun && !isTestRun) {
       spin.stop();
