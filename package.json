@@ -1,0 +1,27 @@
+{
+  "name": "subspace-outreach",
+  "version": "1.0.0",
+  "description": "Automated cold outreach pipeline: Ocean.io → Prospeo → Brevo",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "subspace": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": ["outreach", "pipeline", "sales", "automation"],
+  "author": "Pradeep",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.14",
+    "ora": "^8.1.1"
+  }
+}
