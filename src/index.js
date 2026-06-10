@@ -26,6 +26,7 @@ ${chalk.bold('Flags:')}
   ${chalk.yellow('--contacts-per-company <n>')} Max decision-makers per company          ${chalk.gray(`[default: ${defaultConfig.contactsPerCompany}]`)}
   ${chalk.yellow('--titles <csv>')}             Comma-separated job titles to target     ${chalk.gray('[default: CEO,CTO,CFO,COO,VP,Director]')}
   ${chalk.yellow('--email-delay <ms>')}         Delay between emails in milliseconds     ${chalk.gray(`[default: ${defaultConfig.emailDelayMs}]`)}
+  ${chalk.yellow('--test-email <email>')}         Send a test email during a dry run
   ${chalk.yellow('--dry-run')}                  Run all stages but skip sending emails
   ${chalk.yellow('--help')}                     Show this help message
 
@@ -61,6 +62,8 @@ function parseArgs(argv) {
       flags.jobTitles = args[++i].split(',').map((t) => t.trim());
     } else if (arg === '--email-delay' && args[i + 1]) {
       flags.emailDelayMs = parseInt(args[++i], 10);
+    } else if (arg === '--test-email' && args[i + 1]) {
+      flags.testEmail = args[++i];
     }
   }
 

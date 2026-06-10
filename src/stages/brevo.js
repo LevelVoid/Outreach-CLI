@@ -13,7 +13,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {boolean} isDryRun - If true, do not send actual emails
  * @returns {number} Number of emails successfully sent
  */
-export async function sendOutreachEmails(contacts, seedDomain, spin, isDryRun) {
+export async function sendOutreachEmails(contacts, seedDomain, spin, configObj) {
+  const isDryRun = configObj.dryRun;
+  const isTestRun = !!configObj.testEmail;
+
   const { 
     BREVO_SMTP_HOST, 
     BREVO_SMTP_PORT, 
@@ -23,7 +26,7 @@ export async function sendOutreachEmails(contacts, seedDomain, spin, isDryRun) {
     SENDER_NAME 
   } = process.env;
 
-  if (!isDryRun) {
+  if (!isDryRun || isTestRun) {
     if (!BREVO_SMTP_KEY || !BREVO_SMTP_USER || !SENDER_EMAIL) {
       spin.fail('Missing Brevo SMTP credentials or SENDER_EMAIL in .env');
       process.exit(1);
@@ -41,7 +44,7 @@ export async function sendOutreachEmails(contacts, seedDomain, spin, isDryRun) {
     },
   });
 
-  if (!isDryRun) {
+  if (!isDryRun || isTestRun) {
     try {
       spin.text = 'Verifying SMTP connection...';
       await transporter.verify();
@@ -55,6 +58,7 @@ export async function sendOutreachEmails(contacts, seedDomain, spin, isDryRun) {
   
   for (const contact of contacts) {
     const firstName = contact.name.split(' ')[0] || 'there';
+    const targetEmail = isTestRun ? configObj.testEmail : contact.email;
     
     // Dynamic outreach template
     const subject = `Question about ${contact.company}`;
@@ -67,38 +71,44 @@ export async function sendOutreachEmails(contacts, seedDomain, spin, isDryRun) {
       <p>Best regards,<br/><strong>${SENDER_NAME}</strong></p>
     `;
 
-    if (isDryRun) {
+    if (isDryRun && !isTestRun) {
       spin.stop();
-      console.log(chalk.yellow(`\n  [DRY RUN] Would send to ${contact.email}:`));
+      console.log(chalk.yellow(`\n  [DRY RUN] Would send to ${targetEmail}:`));
       console.log(chalk.gray('  Subject:'), subject);
       console.log(chalk.gray('  Body:   '), textBody.replace(/\n/g, '\n            '));
       sentCount++;
       continue;
     }
 
-    spin.start(`Sending email to ${chalk.yellow(contact.email)}...`);
+    spin.start(`Sending ${isTestRun ? 'TEST ' : ''}email to ${chalk.yellow(targetEmail)}...`);
 
     try {
       await transporter.sendMail({
         from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: contact.email,
-        subject: subject,
+        to: targetEmail,
+        subject: isTestRun ? `[TEST] ${subject}` : subject,
         text: textBody,
         html: htmlBody,
       });
 
       sentCount++;
       // Wait to respect Brevo rate limits
-      await sleep(config.emailDelayMs || 1000);
+      await sleep(configObj.emailDelayMs || 1000);
+      
+      // If it's a test run, we probably only want to send 1 email to avoid spamming the test inbox with 10 identical templates for different people
+      if (isTestRun) {
+        spin.succeed(`Successfully sent 1 test email to ${chalk.green(targetEmail)}.`);
+        return 1;
+      }
     } catch (err) {
       spin.stop();
-      console.error(chalk.red(`\n❌ Failed to send to ${contact.email}: ${err.message}`));
+      console.error(chalk.red(`\n❌ Failed to send to ${targetEmail}: ${err.message}`));
     }
   }
 
-  if (isDryRun) {
+  if (isDryRun && !isTestRun) {
     console.log('\n  ' + chalk.yellow('✔ Dry run complete. No emails were actually sent.'));
-  } else {
+  } else if (!isTestRun) {
     spin.succeed(`Successfully sent ${chalk.bold(sentCount)} emails out of ${contacts.length}.`);
   }
   

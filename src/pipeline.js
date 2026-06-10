@@ -88,14 +88,20 @@ export async function runPipeline(seedDomain, config) {
     console.log(chalk.magenta('──────────────────────────────────────────────────\n'));
 
     if (!isDryRun) {
+      const isTestRun = !!config.testEmail;
+      
       // Interactive confirmation using standard readline
       const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
       });
 
+      const promptMsg = isTestRun 
+        ? chalk.yellow(`⚠  Are you sure you want to send 1 TEST email to ${config.testEmail}? (y/N): `)
+        : chalk.yellow(`⚠  Are you sure you want to send actual emails to ${contacts.length} contacts? (y/N): `);
+
       const answer = await new Promise((resolve) => {
-        rl.question(chalk.yellow(`⚠  Are you sure you want to send actual emails to ${contacts.length} contacts? (y/N): `), resolve);
+        rl.question(promptMsg, resolve);
       });
       rl.close();
 
@@ -108,7 +114,7 @@ export async function runPipeline(seedDomain, config) {
     }
 
     spin.start('Connecting to Brevo SMTP...');
-    await sendOutreachEmails(contacts, seedDomain, spin, isDryRun);
+    await sendOutreachEmails(contacts, seedDomain, spin, config);
 
   } catch (error) {
     if (spin.isSpinning) {
