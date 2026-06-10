@@ -48,8 +48,10 @@ export async function fetchWithRetry(url, options = {}, {
       // Client error — don't retry (e.g. 401, 403, 404)
       if (!response.ok) {
         let errorBody = '';
-        try { errorBody = await response.text(); } catch (_) {}
-        const err = new Error(`HTTP ${response.status}: ${response.statusText}`);
+        try {
+          errorBody = await response.text();
+        } catch (_) {}
+        const err = new Error(`HTTP ${response.status}: ${response.statusText} - ${errorBody}`);
         err.status = response.status;
         err.body = errorBody;
         throw err;
