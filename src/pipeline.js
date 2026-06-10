@@ -1,8 +1,10 @@
 import ora from 'ora';
 import chalk from 'chalk';
 import Table from 'cli-table3';
+import readline from 'readline';
 import { findLookalikeCompanies } from './stages/oceanio.js';
 import { findDecisionMakers } from './stages/prospeo.js';
+import { sendOutreachEmails } from './stages/brevo.js';
 
 export async function runPipeline(seedDomain, config) {
   const isDryRun = config.dryRun;
@@ -79,11 +81,34 @@ export async function runPipeline(seedDomain, config) {
     console.log(`  ${chalk.green('✔')} Stage 2 complete — ${contacts.length} decision makers queued for outreach\n`);
 
     // ---------------------------------------------------------
-    // Stage 3: Brevo (Placeholder for next step)
+    // Stage 3: Brevo (Send Emails)
     // ---------------------------------------------------------
-    console.log('  ' + chalk.gray('────────────────────────────────────────────────'));
-    console.log('  ' + chalk.blue('ℹ Stage 3 (Brevo) will be wired in the next step...'));
-    console.log('  ' + chalk.gray('────────────────────────────────────────────────\n'));
+    console.log('\n' + chalk.magenta('──────────────────────────────────────────────────'));
+    console.log(chalk.magenta.bold('  Stage 3 — ✉️  Brevo — Sending Outreach Emails'));
+    console.log(chalk.magenta('──────────────────────────────────────────────────\n'));
+
+    if (!isDryRun) {
+      // Interactive confirmation using standard readline
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      const answer = await new Promise((resolve) => {
+        rl.question(chalk.yellow(`⚠  Are you sure you want to send actual emails to ${contacts.length} contacts? (y/N): `), resolve);
+      });
+      rl.close();
+
+      if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
+        console.log(chalk.blue('\n  ℹ Email sending aborted by user. Pipeline finished gracefully.\n'));
+        return;
+      }
+      
+      console.log(); // Add empty line for spacing
+    }
+
+    spin.start('Connecting to Brevo SMTP...');
+    await sendOutreachEmails(contacts, seedDomain, spin, isDryRun);
 
   } catch (error) {
     if (spin.isSpinning) {
