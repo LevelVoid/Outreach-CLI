@@ -1,6 +1,52 @@
-# Subspace Outreach Pipeline
+# CLI Outreach Pipeline
 
 An automated cold outreach CLI tool that integrates with Ocean.io, Prospeo, and Brevo SMTP to find lookalike companies, extract decision-maker contact info, and send personalized cold emails.
+
+## Architecture Diagram
+
+```text
+                          +-------------------------+
+                          |   User CLI Command      |
+                          |   (Seed Domain, Args)   |
+                          +-----------+-------------+
+                                      |
+                                      v
+  +-----------------------------------+-----------------------------------+
+  |                       Stage 1: Ocean.io API                           |
+  | Input: Seed Domain                                                    |
+  | Action: Finds similar "lookalike" companies based on the seed domain  |
+  +-----------------------------------+-----------------------------------+
+                                      |
+                                      v
+  +-----------------------------------+-----------------------------------+
+  |                       Stage 2: Prospeo API                            |
+  | Input: Lookalike Companies                                            |
+  | Action: Extracts decision makers (CEOs, Founders) from each company   |
+  +-----------------------------------+-----------------------------------+
+                                      |
+                                      v
+  +-----------------------------------+-----------------------------------+
+  |                    Stage 3: Templating Engine                         |
+  | Input: Decision Maker Info + Email Template (JavaScript)              |
+  | Action: Generates a highly personalized email subject and body        |
+  +-----------------------------------+-----------------------------------+
+                                      |
+                                      v
+  +-----------------------------------+-----------------------------------+
+  |                        Stage 4: Brevo SMTP                            |
+  | Input: Personalized Emails                                            |
+  | Action: Safely sends out cold emails with appropriate delay limits    |
+  +-----------------------------------+-----------------------------------+
+```
+
+## How it Works
+
+The pipeline executes sequentially in the following stages:
+
+1. **Company Discovery (Ocean.io):** Takes a seed domain (e.g., `stripe.com`) and queries the Ocean.io API to discover similar/lookalike companies based on your specified limits.
+2. **Contact Extraction (Prospeo):** For each discovered company, the tool queries the Prospeo API to find decision-makers matching the provided job titles (e.g., CEO, CTO, Founders).
+3. **Template Generation:** Uses customizable Javascript templates to generate personalized email subjects and bodies (text and HTML) for each extracted contact.
+4. **Email Dispatch (Brevo SMTP):** Authenticates with Brevo SMTP via `nodemailer` and sends out the customized emails, with configurable delays to respect SMTP rate limits.
 
 ## Prerequisites
 
